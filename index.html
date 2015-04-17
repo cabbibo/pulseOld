@@ -1,0 +1,523 @@
+<html>
+
+  <head>
+    <style>
+      body{ margin: 0px; font-family:"GeoSans"; }
+
+      html{ overflow: hidden }
+      
+      @font-face {
+  font-family: "GeoSans";
+  src: url("../assests/GeosansLight.ttf");
+}
+      #songInfo{
+        z-index:999;
+        color:#fff; 
+        text-align:center;
+        bottom:20px;
+        font-size:30px;
+        width:100%;
+        position:absolute;
+      }
+
+
+    </style>
+  </head>
+
+  <body>
+
+    <div id="container"></div>
+
+    <script src="lib/three.min.js"                  ></script>
+    <script src="lib/jquery.min.js"             ></script>
+    <script src="lib/TrackballControls.js"      ></script>
+    
+    
+    <script src="lib/AudioTexture.js"           ></script>
+    <script src="AudioController.js"        ></script>
+    <script src="UserAudio.js"              ></script>
+    <script src="lib/ObjectControls.js"         ></script>
+    
+    <script src="lib/PhysicsRenderer.js"              ></script>
+    <script src="lib/underscore.js"              ></script>
+    <script src="lib/OBJLoader.js"              ></script>
+
+    <script src="TextParticles.js"          ></script>
+
+    <script src="ObjectRotator.js"              ></script>
+    <script src="ShaderLoader.js"               ></script>
+    <script src="Song.js"                       ></script>
+    <script src="TextParticles.js"                       ></script>
+    <script src="UbuntuMono.js"                       ></script>
+
+
+
+    <script src = "RepelerMesh.js"              ></script>
+    <script src = "GEM.js"                      ></script>
+    <script src = "Crucible.js"                 ></script>
+
+
+    <script src = "Wagner/Wagner.js"            ></script>
+    <script src = "Wagner/Wagner.base.js"       ></script>
+    <script src = "Wagner/ShaderLoader.js"      ></script>
+ 
+
+    <script src = "songParams.js"></script> 
+  
+    <script>
+
+      var loaded = 0;
+      var neededToLoad = 1;
+
+
+      var simulationActive = true;
+
+
+      var gems = [];
+
+      WAGNER.vertexShadersPath    = 'Wagner/vertex-shaders';
+      WAGNER.fragmentShadersPath  = 'Wagner/fragment-shaders';
+      WAGNER.assetsPath           = 'Wagner/assets/';
+
+
+      
+      /*
+
+         Setting up Audio
+
+      */
+      var audioController = new AudioController();
+
+      var userAudio = new UserAudio( audioController.ctx , audioController.gain );
+
+      // Muting audio, so we don't have feedback
+      audioController.mute.gain.value = 0;
+
+
+      var audio = new Audio();
+      
+      var source = audioController.ctx.createMediaElementSource(audio);
+      source.connect( audioController.gain );
+    
+
+      var matcap = THREE.ImageUtils.loadTexture('img/rough-aluminium.jpg');
+      var matcapBlood = THREE.ImageUtils.loadTexture('img/blood.jpg');
+      var matcapTurq = THREE.ImageUtils.loadTexture('img/turq.jpg');
+      var matcapDark = THREE.ImageUtils.loadTexture('img/dark.jpg');
+     
+      //var normal = THREE.ImageUtils.loadTexture('img/t_n_pebbles.png');
+      var normal = THREE.ImageUtils.loadTexture('img/t_n_granite.png');
+
+      normal.wrapT = normal.wrapS = THREE.RepeatWrapping;
+
+      var uniforms = {
+
+
+        cubeMatrix: { type:"m4" , value: null },
+        dT:   { type:"f" , value: 0 },
+        time: { type:"f" , value: 0 },
+        counter: { type:"f" , value: 0 },
+        t_matcap:{ type:"t" , value: matcapDark },
+        t_normal:{ type:"t" , value: normal },
+        fingers:{ type:"v3", value:[] },
+        t_audio:{type:"t",value:audioController.texture},
+       
+        repelers:         { type:"v3v" , value:[] },
+        radii:            { type:"v3v" , value:[] },
+        velocities:       { type:"v3v" , value:[] },
+        power:            { type:"v3v" , value:[] },
+
+        lightPos :{ type:"v3" , value: null }
+        
+
+      }
+
+      var G = uniforms;
+      var REPELERS = [];
+      
+
+      var camera, renderer, scene , controls;
+      
+      var vs, fs;
+
+      var geometry, material , light;
+      var v1 = new THREE.Vector3();
+      var v2 = new THREE.Vector3();
+
+
+      var podGeo;
+      var pod;
+      var objectControls;
+      
+      var shaders = new ShaderLoader( 'shaders' , 'shaderChunks'   );
+
+     /* shaders.load( 'vs-rainbow' , 'rainbow' , 'vertex' );
+      shaders.load( 'fs-rainbow' , 'rainbow' , 'fragment' );
+
+      shaders.load( 'vs-matcap' , 'matcap' , 'vertex' );
+      shaders.load( 'fs-matcap' , 'matcap' , 'fragment' );
+
+      
+      shaders.load( 'vs-sem'  , 'sem' , 'vertex' );
+      shaders.load( 'fs-sem' , 'sem' , 'fragment' );*/
+
+      shaders.load( 'ss-fire' , 'fire' , 'simulation' );
+      
+      shaders.load( 'vs-flesh'  , 'flesh' , 'vertex' );
+      shaders.load( 'fs-flesh' , 'flesh' , 'fragment' );
+
+      shaders.load( 'vs-smooth'  , 'smooth' , 'vertex' );
+      shaders.load( 'fs-smooth' , 'smooth' , 'fragment' );
+     
+      shaders.load( 'vs-title'  , 'title' , 'vertex' );
+      shaders.load( 'fs-title' , 'title' , 'fragment' );
+
+      /*shaders.load( 'fs-ribbon'   , 'ribbon'      , 'fragment' );
+      shaders.load( 'vs-ribbon'   , 'ribbon'      , 'vertex' );*/
+
+
+      shaders.shaderSetLoaded = function(){
+
+        onLoad();
+
+      }
+        
+      
+    
+      var geo = new THREE.IcosahedronGeometry( .13 , 1 );
+
+      var songs = [];
+      var currentSong =null;
+      var songInfo = document.getElementById('songInfo');
+
+
+
+      function init(){
+
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        camera = new THREE.PerspectiveCamera( 65 , w/h , .1 , 100 );
+        camera.position.z = 2;
+        camera.position.y = 0;
+
+       // camera.position.y= 160;
+       // camera.position.z= 180;
+
+        //camera.position.y= 160;
+        //camera.position.z= 180;
+
+        camera.lookAt( new THREE.Vector3() );
+
+       // controls = new THREE.TrackballControls( camera );
+        scene = new THREE.Scene();
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setPixelRatio( window.devicePixelRatio );
+
+         /*
+
+        POST PROCESSING
+        */
+        composer = new WAGNER.Composer( renderer, { useRGBA: true } );
+	
+        bloomPass = new WAGNER.MultiPassBloomPass();
+        bloomPass.params.blurAmount = 3;
+
+        FXAAPass = new WAGNER.FXAAPass();
+        vignettePass = new WAGNER.Vignette2Pass();
+        vignettePass.params.boost = 1.5;
+        vignettePass.params.reduction = 1;
+        noisePass = new WAGNER.NoisePass();
+        noisePass.params.amount = .1;
+        noisePass.params.speed = 1;
+        ssaoPass = new WAGNER.SSAOPass();
+        chromaticAbberationPass = new WAGNER.ChromaticAberrationPass();
+
+
+        container = document.getElementById( 'container' );
+        
+        document.body.appendChild( renderer.domElement );
+        window.addEventListener( 'resize', onWindowResize , false );
+        window.addEventListener( 'keydown', onKeyDown , false );
+
+        onWindowResize();
+         depthMaterial = new THREE.MeshBasicMaterial();
+        objectControls = new ObjectControls( camera );
+
+
+        clock = new THREE.Clock();
+
+        //conso
+
+        
+        var geo = new THREE.CubeGeometry( .8 , .8 , .8  ,  1 , 1, 1);
+        var mat = new THREE.MeshBasicMaterial({ wireframe: true });
+
+        cube = new THREE.Mesh( geo , mat );
+
+        scene.add( cube );
+        cube.visible = false;
+        G.cubeMatrix.value = cube.matrixWorld;
+
+        cube.position.y = 0;
+        console.log( G.cubeMatrix );
+       // gems.push( gem );
+
+         var g = new THREE.IcosahedronGeometry(.005 , 1 );
+        var m = new THREE.MeshBasicMaterial({
+          //map:audioController.texture,
+          color: 0xffffff
+        });
+
+
+        // Creating the center pulsing mesh
+        for(var i = 0; i < 50; i++ ){
+
+          var mesh = new THREE.Mesh( g , m  );
+          mesh.target   = new THREE.Vector3();//toCart( 12 , t , p );
+          mesh.velocity = new THREE.Vector3();
+          mesh.power    = new THREE.Vector3( 1 , 1 , 1);
+          mesh.radius   = new THREE.Vector3( 1 , 1 , 1); 
+
+          G.repelers.value.push( new THREE.Vector3() );
+          G.velocities.value.push( mesh.velocity );
+          G.power.value.push( mesh.power );
+          G.radii.value.push( mesh.radii );
+
+          REPELERS.push( mesh );
+          G.fingers.value.push( mesh.position );
+
+          cube.add( mesh );
+
+
+        //  var 
+          var p = new THREE.Vector3();
+          p.x = Math.random()-.5;
+          p.y = Math.random()-.5;
+          p.z = Math.random()-.5;
+
+          p.normalize();
+
+          mesh.position.copy( p.multiplyScalar( 1 ) );
+         // mesh.position.y += .6;
+         /* mesh.position.x = (Math.random() - .5 ) * .8;
+          mesh.position.z = (Math.random() - .5 ) * .8;
+          mesh.position.y = (Math.random() - .5 ) * .8 + .6;*/
+
+        }
+
+        var xyz = [
+          [1,0,0],
+          [0,1,0],
+          [0,0,1],
+          [-1,0,0],
+          [0,-1,0],
+          [0,0,-1]
+
+        ]
+
+        var vs = shaders.setValue( shaders.vs.smooth , 'SIZE' , 32 );
+        for( var  i = 0; i < 6; i ++ ){
+
+          t = new THREE.Mesh( new THREE.PlaneGeometry( .5 , .5 ,  32, 32 ) );
+         
+          var x = xyz[i][0];
+          var y = xyz[i][1];
+          var z = xyz[i][2];
+
+
+          t.position.x = x;
+          t.rotation.y = x * .5 * Math.PI;
+
+          t.position.y = y;
+          t.rotation.x = y * .5 * Math.PI;
+          
+          t.position.z = z;
+
+          //t.rotation.y = z * .5 * Math.PI;
+ 
+                    //t.rotation.x = Math.random();
+          //t.rotation.y = Math.random();
+          //t.rotation.z = Math.random();
+
+          //t.position.z = ( x - .5 );
+          //t.position.x = ( y  - .5 );
+
+          //t.position.y = .6// + ( z -.5 );
+         
+          t.position.multiplyScalar( .25 ); 
+
+         /* v1.set( x , y , z );
+          v1.add( t.position );
+          t.lookAt( v1 );*/
+
+          t.updateMatrix();
+
+
+          var gem = new RepelerMesh( 'Parameters' , t , REPELERS , {
+            
+            vs: vs,
+            fs: shaders.fragmentShaders.smooth,
+        
+            soul:{
+
+              repulsionPower:     { type:"f" , value: .06, constraints:[-300  , 0] },
+              repulsionRadius:     { type:"f" , value: 4.5 , constraints:[ 0  , 1000] },
+              
+              repelers:         G.repelers,
+              radii:            G.radii,
+              velocities:       G.velocities,
+              power:            G.power,
+
+            },
+
+            body:{
+              //t_refl:{type:"t" , value:reflectionCube},
+              //t_refr:{type:"t" , value:reflectionCube },
+              custom1:{type:"f" , value:.9 , constraints:[ .8 , 1 ]},
+              t_sem:{type:"t" , value: matcapBlood }
+
+            }
+
+          }); 
+
+          console.log( gem );
+          gem.soul.reset( gem.t_og.value );
+          gem.toggle();
+
+          gems.push( gem );
+
+         // gem.g2 = gem.body.clone();
+         // gem.g2.scale.multiplyScalar( 10 );
+         // scene.add( gem.g2 );
+
+       
+        }
+
+        for( var i = 0; i < 6; i++ ){
+
+
+        }
+
+       // gems.push( gem );
+
+
+        crucible = new Crucible( songParams );
+        scene.add( crucible.body );
+        crucible.body.position.y = -.6;
+
+        controls = new ObjectRotator( cube );
+
+
+        var light=  new THREE.PointLight( 0xff0000 , 1 , 5 );
+        light.position.set( 0 , 3 , 0 );
+        scene.add( light );
+        uniforms.lightPos.value = light.position;
+  
+      }
+
+      function animate(){
+
+       /* cube.rotation.x += .01;
+        cube.rotation.y += .01;
+        cube.rotation.z += .01;*/
+
+        controls.update();
+        cube.updateMatrixWorld();
+        objectControls.update();
+
+        G.dT.value = clock.getDelta();
+        G.time.value += G.dT.value;
+        G.counter.value ++;
+
+        
+        audioController.update();
+
+        for( var i = 0; i < G.repelers.value.length; i++ ){
+       
+       /*var r1 = u.repelers.value[i];
+       var v1 = u.velocities.value[i];*/
+
+
+         var ind = i / (2 *  G.repelers.value.length); 
+         var fI = Math.floor( ind * audioController.audioData.length );
+         var p = audioController.audioData[ fI ];
+
+         G.power.value[i].x = p /// 256;
+
+         G.repelers.value[i].copy( REPELERS[i].position );
+         G.repelers.value[i].applyMatrix4( cube.matrixWorld );
+
+         
+        }
+
+
+
+        for( var i = 0; i < gems.length; i++ ){
+          gems[i].update();
+          //gems[i].g2.position.z = cube.position.z * 10;
+        }
+        composer.reset();
+    
+        composer.render( scene, camera );
+       // composer.pass( chromaticAbberationPass );
+       // composer.pass( bloomPass );
+      // composer.pass( zoomPass );
+       // composer.pass( vignettePass );
+       // composer.pass( FXAAPass );
+        //composer.pass( noisePass );
+
+        composer.toScreen();
+
+
+        requestAnimationFrame( animate );
+
+
+      }
+
+      
+       // Resets the renderer to be the proper size
+      function onWindowResize(){
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        composer.setSize( renderer.domElement.width, renderer.domElement.height );
+        depthTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, false );
+
+
+      }
+
+       function onKeyDown(e){
+
+        console.log( e.keyCode );
+        
+        if( e.keyCode == 32 ){
+
+          simulationActive = !simulationActive;
+
+        }
+
+
+      }
+
+
+      function onLoad(){
+
+        loaded ++;
+        
+        if( loaded == neededToLoad ){
+          init();
+          animate();
+        }
+
+      }
+
+    </script>
+
+  </body>
+</html>
