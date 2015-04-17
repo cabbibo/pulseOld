@@ -10,7 +10,7 @@ function Crucible( songParams){
   this.body = new THREE.Mesh( geo , mat );
 
   var geo = new THREE.CylinderGeometry( this.innerRadius , this.downInnerRadius , this.height  , 50 , 1 , true );
-  var mat = new THREE.MeshLambertMaterial({ side: THREE.BackSide })
+  var mat = new THREE.MeshPhongMaterial({ side: THREE.BackSide })
   var mesh = new THREE.Mesh( geo , mat );
   this.body.add( mesh );
 
@@ -56,6 +56,70 @@ function Crucible( songParams){
   this.veins = this.createVeins();
   this.body.add( this.veins );
 
+
+  this.floor = new THREE.Mesh( new THREE.PlaneGeometry( 10000 , 10000 ) , new THREE.MeshLambertMaterial(0xffffff));
+  this.floor.position.y = - this.height / 2;
+  this.floor.position.y -= .01;
+  this.floor.rotation.x = -Math.PI / 2;
+  this.body.add( this.floor );
+
+
+  var mountainMat = new THREE.ShaderMaterial({
+    uniforms:{
+      t_audio: G.t_audio,
+      time: G.time,
+      bumpSize:   G.value1,
+      bumpSpeed:  G.value2,
+      bumpHeight: G.value3
+      
+    },
+    vertexShader: shaders.vs.mountain,
+    fragmentShader: shaders.fs.mountain,
+    
+
+  });
+
+  this.mountains = new THREE.Mesh( new THREE.PlaneGeometry( 40 , 16 , 300 , 100 ), mountainMat );
+
+  this.mountains.position.z = -10;
+  this.mountains.rotation.x = - Math.PI / 2;
+
+  console.log( this.mountains );
+  this.body.add( this.mountains );
+
+
+  var gooMat = new THREE.ShaderMaterial({
+    uniforms:{
+      t_audio: G.t_audio,
+      time: G.time,
+      bumpSize:   G.value1,
+      bumpSpeed:  G.value2,
+      bumpHeight: G.value3
+      
+    },
+    vertexShader: shaders.vs.goo,
+    fragmentShader: shaders.fs.goo,
+    //side: THREE.DoubleSide
+    
+
+  });
+
+  var geo = new THREE.CylinderGeometry(0,this.downInnerRadius , 0. , 100 , 100 , true );
+
+  
+  this.goo = new THREE.Mesh( geo, gooMat );
+
+  //this.goo.rotation.x = -Math.PI /2 ;
+  this.goo.position.y = -this.height / 2;
+  console.log( this.mountains );
+  this.body.add( this.goo );
+
+  this.city = new City();
+
+  this.city.position.z = 50;
+  this.city.position.y = - this.height / 2;
+
+  this.body.add( this.city );
 }
 
 
@@ -72,7 +136,7 @@ Crucible.prototype.createVeins = function(){
     var p3 = new THREE.Vector3();
 
     
-    p1.z = 5;
+    p1.z = 100;
     p1.y = -this.height/2;
     p1.x = i * .02;
 

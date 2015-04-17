@@ -55,6 +55,7 @@
     <script src = "RepelerMesh.js"              ></script>
     <script src = "GEM.js"                      ></script>
     <script src = "Crucible.js"                 ></script>
+    <script src = "City.js"                 ></script>
 
 
     <script src = "Wagner/Wagner.js"            ></script>
@@ -100,10 +101,10 @@
       source.connect( audioController.gain );
     
 
-      var matcap = THREE.ImageUtils.loadTexture('img/rough-aluminium.jpg');
-      var matcapBlood = THREE.ImageUtils.loadTexture('img/blood.jpg');
-      var matcapTurq = THREE.ImageUtils.loadTexture('img/turq.jpg');
-      var matcapDark = THREE.ImageUtils.loadTexture('img/dark.jpg');
+       //var matcap = THREE.ImageUtils.loadTexture('img/rough-aluminium.jpg');
+       var matcap = THREE.ImageUtils.loadTexture('img/blood.jpg');
+      // var matcapTurq = THREE.ImageUtils.loadTexture('img/turq.jpg');
+      //var matcapDark = THREE.ImageUtils.loadTexture('img/dark.jpg');
      
       //var normal = THREE.ImageUtils.loadTexture('img/t_n_pebbles.png');
       var normal = THREE.ImageUtils.loadTexture('img/t_n_granite.png');
@@ -117,7 +118,7 @@
         dT:   { type:"f" , value: 0 },
         time: { type:"f" , value: 0 },
         counter: { type:"f" , value: 0 },
-        t_matcap:{ type:"t" , value: matcapDark },
+        t_matcap:{ type:"t" , value: matcap },
         t_normal:{ type:"t" , value: normal },
         fingers:{ type:"v3", value:[] },
         t_audio:{type:"t",value:audioController.texture},
@@ -127,8 +128,15 @@
         velocities:       { type:"v3v" , value:[] },
         power:            { type:"v3v" , value:[] },
 
-        lightPos :{ type:"v3" , value: null }
-        
+
+        // Some values we can use all around 
+        value1: { type:"f" , value: 1 },
+        value2: { type:"f" , value: 1 },
+        value3: { type:"f" , value: 1 },
+       
+        puppyLight: { type:"v3" , value: null }, 
+        cameraLight: { type:"v3" , value: null }, 
+        crucibleLight: { type:"v3" , value: null }, 
 
       }
 
@@ -151,15 +159,6 @@
       
       var shaders = new ShaderLoader( 'shaders' , 'shaderChunks'   );
 
-     /* shaders.load( 'vs-rainbow' , 'rainbow' , 'vertex' );
-      shaders.load( 'fs-rainbow' , 'rainbow' , 'fragment' );
-
-      shaders.load( 'vs-matcap' , 'matcap' , 'vertex' );
-      shaders.load( 'fs-matcap' , 'matcap' , 'fragment' );
-
-      
-      shaders.load( 'vs-sem'  , 'sem' , 'vertex' );
-      shaders.load( 'fs-sem' , 'sem' , 'fragment' );*/
 
       shaders.load( 'ss-fire' , 'fire' , 'simulation' );
       
@@ -171,9 +170,12 @@
      
       shaders.load( 'vs-title'  , 'title' , 'vertex' );
       shaders.load( 'fs-title' , 'title' , 'fragment' );
-
-      /*shaders.load( 'fs-ribbon'   , 'ribbon'      , 'fragment' );
-      shaders.load( 'vs-ribbon'   , 'ribbon'      , 'vertex' );*/
+      
+      shaders.load( 'vs-mountain'  , 'mountain' , 'vertex' );
+      shaders.load( 'fs-mountain' , 'mountain' , 'fragment' );
+      
+      shaders.load( 'vs-goo'  , 'goo' , 'vertex' );
+      shaders.load( 'fs-goo' , 'goo' , 'fragment' );
 
 
       shaders.shaderSetLoaded = function(){
@@ -198,10 +200,10 @@
         var h = window.innerHeight;
 
         camera = new THREE.PerspectiveCamera( 65 , w/h , .1 , 100 );
-        camera.position.z = 2;
+        camera.position.z = 70;
         camera.position.y = 0;
 
-       // camera.position.y= 160;
+               // camera.position.y= 160;
        // camera.position.z= 180;
 
         //camera.position.y= 160;
@@ -211,6 +213,13 @@
 
        // controls = new THREE.TrackballControls( camera );
         scene = new THREE.Scene();
+
+ 
+        cameraLight = new THREE.PointLight( 0xff0000 , 1,  10 );
+        scene.add( cameraLight );
+        G.cameraLight.value = cameraLight.position;
+        cameraLight.position.copy( camera.position );
+
 
         renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth, window.innerHeight );
@@ -260,9 +269,18 @@
         scene.add( cube );
         cube.visible = false;
         G.cubeMatrix.value = cube.matrixWorld;
+        G.puppyLight.value = cube.position;
+
+        
+        puppyLight=  new THREE.PointLight( 0x0000ff , 1 , 5 );
+        
+        scene.add( puppyLight );
+        puppyLight.position.copy( cube.position );
+        
 
         cube.position.y = 0;
-        console.log( G.cubeMatrix );
+
+
        // gems.push( gem );
 
          var g = new THREE.IcosahedronGeometry(.005 , 1 );
@@ -318,10 +336,12 @@
 
         ]
 
-        var vs = shaders.setValue( shaders.vs.smooth , 'SIZE' , 32 );
+        var simSize = 32;
+
+        var vs = shaders.setValue( shaders.vs.smooth , 'SIZE' , simSize );
         for( var  i = 0; i < 6; i ++ ){
 
-          t = new THREE.Mesh( new THREE.PlaneGeometry( .5 , .5 ,  32, 32 ) );
+          t = new THREE.Mesh( new THREE.PlaneGeometry( .5 , .5 ,  simSize , simSize ) );
          
           var x = xyz[i][0];
           var y = xyz[i][1];
@@ -377,7 +397,8 @@
               //t_refl:{type:"t" , value:reflectionCube},
               //t_refr:{type:"t" , value:reflectionCube },
               custom1:{type:"f" , value:.9 , constraints:[ .8 , 1 ]},
-              t_sem:{type:"t" , value: matcapBlood }
+              t_sem: G.t_matcap,
+             
 
             }
 
@@ -408,15 +429,19 @@
         scene.add( crucible.body );
         crucible.body.position.y = -.6;
 
+        G.crucibleLight.value = crucible.body.position;
+
+        crucibleLight=  new THREE.PointLight( 0x00ff00 , 1 , 5 );
+        
+        scene.add( crucibleLight);
+        crucibleLight.position.copy( crucible.body.position );
+        
+
+
         controls = new ObjectRotator( cube );
 
 
-        var light=  new THREE.PointLight( 0xff0000 , 1 , 5 );
-        light.position.set( 0 , 3 , 0 );
-        scene.add( light );
-        uniforms.lightPos.value = light.position;
-  
-      }
+            }
 
       function animate(){
 
@@ -427,6 +452,10 @@
         controls.update();
         cube.updateMatrixWorld();
         objectControls.update();
+
+        cameraLight.position.copy( camera.position );
+        puppyLight.position.copy( cube.position );
+
 
         G.dT.value = clock.getDelta();
         G.time.value += G.dT.value;

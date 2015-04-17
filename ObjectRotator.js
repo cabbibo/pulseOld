@@ -28,8 +28,10 @@ function ObjectRotator( object ){
 
   this.zoomForce = 0;
   this.zoomSpeed = 0;
-  this.minZoom = .1;
-  this.maxZoom = 3.85;
+  this.minZoom = 1.2;
+
+  this.maxZoom = 70.;
+
 
   this.zoomDir =camera.position.clone();
   this.zoomDir.sub(  this.object.position );
