@@ -5,6 +5,10 @@ function Crucible( songParams){
   this.innerRadius = .8;
   this.downInnerRadius = .5;
 
+  this.guiPos = 6;
+
+  this.titlePos = 2;
+
   var geo = new THREE.CylinderGeometry(this.innerRadius , 1 , this.height , 50 , 1 , true );
   var mat = new THREE.MeshLambertMaterial()
   this.body = new THREE.Mesh( geo , mat );
@@ -14,10 +18,21 @@ function Crucible( songParams){
   var mesh = new THREE.Mesh( geo , mat );
   this.body.add( mesh );
 
+
+  var geo = new THREE.CylinderGeometry(.1 , .2 , this.height * .5 , 4 , 1 , false );
+  var mat = new THREE.MeshLambertMaterial()
+
+  this.titlePedestal = new THREE.Mesh( geo , mat );
+  this.titlePedestal.position.z = this.titlePos;
+  this.titlePedestal.position.y = - this.height / 4
+  this.titlePedestal.scale.z = 1.3;
+  // this.titlePedestal.rotation.y = M
+  this.body.add( this.titlePedestal );
+
   this.songs = [];
 
 
-  var geo = new THREE.IcosahedronGeometry( .05 , 1 );
+  var geo = new THREE.IcosahedronGeometry( .05 , 2 );
     
    
   var font = UbuntuMono( "img/UbuntuMono.png" )
@@ -45,11 +60,17 @@ function Crucible( songParams){
     this.body.add( song.mesh );
     this.body.add( song.text );
 
+    song.text.position.z = this.titlePos;
+    //song.text.position.x = -.1;
+    song.text.position.y = this.height * 1.5;
+
+    song.deselect();
     this.songs.push( song );
 
   }
 
-  //this.songs[0].play();
+  
+  this.songs[0].select();
 
 
 
@@ -67,7 +88,13 @@ function Crucible( songParams){
   var mountainMat = new THREE.ShaderMaterial({
     uniforms:{
       t_audio: G.t_audio,
+      t_normal: G.t_normal,
+      t_matcap: G.t_matcap,
+
       time: G.time,
+      puppyLight: G.puppyLight,
+      cameraLight: G.cameraLight,
+
       bumpSize:   G.value1,
       bumpSpeed:  G.value2,
       bumpHeight: G.value3
@@ -91,7 +118,11 @@ function Crucible( songParams){
   var gooMat = new THREE.ShaderMaterial({
     uniforms:{
       t_audio: G.t_audio,
+      t_matcap: G.t_matcap,
+      t_normal: G.t_normal,
       time: G.time,
+      puppyLight: G.puppyLight,
+      cameraLight: G.cameraLight,
       bumpSize:   G.value1,
       bumpSpeed:  G.value2,
       bumpHeight: G.value3
@@ -128,6 +159,10 @@ Crucible.prototype.createVeins = function(){
   var positions = [];
   
   var l = this.songs.length;
+
+
+  var guiPos = this.guiPos;
+
   for( var i = 0; i < l ; i++ ){
 
     var s = this.songs[i];
@@ -135,10 +170,135 @@ Crucible.prototype.createVeins = function(){
     var p2 = new THREE.Vector3();
     var p3 = new THREE.Vector3();
 
-    
     p1.z = 100;
     p1.y = -this.height/2;
-    p1.x = i * .02;
+    p1.x = 0 + i * .02;
+
+    p2.z = guiPos + ( l - i ) * .02;
+    p2.y = -this.height/2;
+    p2.x = 0 + i * .02;
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = guiPos  - .5 + ( l - i ) * .02;
+
+    p2.y = -this.height/2;
+    p2.x = -.5 + i * .02;
+
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = guiPos - 1.5 - ( l - i ) * .02;
+
+    p2.y = -this.height/2;
+    p2.x = -.5 + i * .02;
+
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = guiPos - 2 - ( l - i ) * .02;
+
+    p2.y = -this.height/2;
+    p2.x =  i * .02;
+
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = this.titlePos + .6 - ( l - i ) * .02;
+
+    p2.y = -this.height/2;
+    p2.x =  i * .02;
+
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = this.titlePos  + .2 - ( l - i ) * .02;
+    p2.y = -this.height/2;
+    p2.x = .3 + i * .02;
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = this.titlePos   - .2 + ( l - i ) * .02;
+    p2.y = -this.height/2;
+    p2.x = .3 + i * .02;
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
+
+    p2.z = this.titlePos  - .6 + ( l - i ) * .02;
+
+    p2.y = -this.height/2;
+    p2.x = 0. + i * .02;
+
+    positions.push( p1 );
+    positions.push( p2 );
+
+    p3.copy( p2 );
+
+
+
+  
+    p1 = new THREE.Vector3();
+    p2 = new THREE.Vector3();
+    
+    p1.copy( p3 );
 
     p2.z = 1.3;
     p2.y = -this.height/2;
@@ -235,7 +395,7 @@ Crucible.prototype.createVeins = function(){
   geo = new THREE.BufferGeometry();
   geo.addAttribute( 'position'  , a_pos );
 
-  var mat = new THREE.LineBasicMaterial();
+  var mat = new THREE.LineBasicMaterial({ color: 0x448866 });
 
   var mesh = new THREE.Line( geo , mat , THREE.LinePieces );
 

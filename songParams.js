@@ -1,62 +1,48 @@
    
-      var songParams = [
+var songParams = [
+ 
+  {
+    title: "Don't Mind Me ft. Whoarei",
+    artist: 'Nosaj Thing',
+    soundcloudID: 198834021,
+    material: 'rainbow',
+  },
 
-          {
-            title: 'Coronus, The Terminator',
-            artist: 'Flying Lotus',
-            soundcloudID: 168192066,
-            material: 'rainbow',
-          },
+  {
+    title: 'Bus People',
+    artist: 'D TIBERIO',
+    soundcloudID: 200730154,
+    material: 'rainbow',
+  },
 
-          {
-            title: 'Empyrean ( feat. Mendee Ichikawa )',
-            artist: 'Mono / Poly',
-            soundcloudID: 161988567,
-            material: 'rainbow',
-          },
+  {
+    title: "All That's Torn ft. Natasha Agrama",
+    artist: 'D TIBERIO',
+    soundcloudID: 93244937,
+    material: 'rainbow',
+  },
+  
+  {
+    title: 'Light #3 ( Gerry Read Remix )',
+    artist: 'Nosaj Thing',
+    soundcloudID: 113854442,
+    material: 'rainbow',
+  },
 
-          {
-            title: 'Movement  I , II & III',
-            artist: 'Lapalux',
-            soundcloudID: 167881505,
-            material: 'rainbow',
-          },
+  {
+    title: 'ALT.VEL.PTCH',
+    artist: 'Lorn',
+    soundcloudID: 193020880,
+    material: 'rainbow',
+  },
 
-          {
-            title: 'Holiday (feat. Jonti)',
-            artist: 'Teebs',
-            soundcloudID: 137908413,
-            material: 'rainbow',
-          },
+  
+  {
+    title: 'I Love You, Cookie',
+    artist: 'Whoarei',
+    soundcloudID: 197208637,
+    material: 'rainbow',
+  },
 
-           {
-            title: 'Austere Coincidences',
-            artist: 'My Dry Wet Mess',
-            soundcloudID: 66417987,
-            material: 'rainbow',
-          },
-
-          {
-            title: 'For Love I Come',
-            artist: 'Thundercat',
-            soundcloudID: 17068532,
-            material: 'rainbow',
-          },
-
-          {
-            title: 'Onward ( Mono / Poly remix )',
-            artist: 'Daedelus',
-            soundcloudID: 177345046,
-            material: 'rainbow',
-          },
-
-          {
-            title: 'The Antidote ( feat. Nai Palm )',
-            artist: 'Taylor McFerrin',
-            soundcloudID: 143556987,
-            material: 'rainbow',
-          },
-
-
-      ]
+]
 

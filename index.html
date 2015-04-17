@@ -89,10 +89,10 @@
       */
       var audioController = new AudioController();
 
-      var userAudio = new UserAudio( audioController.ctx , audioController.gain );
+     // var userAudio = new UserAudio( audioController.ctx , audioController.gain );
 
       // Muting audio, so we don't have feedback
-      audioController.mute.gain.value = 0;
+     // audioController.mute.gain.value = 0;
 
 
       var audio = new Audio();
@@ -120,8 +120,8 @@
         counter: { type:"f" , value: 0 },
         t_matcap:{ type:"t" , value: matcap },
         t_normal:{ type:"t" , value: normal },
-        fingers:{ type:"v3", value:[] },
         t_audio:{type:"t",value:audioController.texture},
+        fingers:{ type:"v3", value:[] },
        
         repelers:         { type:"v3v" , value:[] },
         radii:            { type:"v3v" , value:[] },
@@ -200,7 +200,8 @@
         var h = window.innerHeight;
 
         camera = new THREE.PerspectiveCamera( 65 , w/h , .1 , 100 );
-        camera.position.z = 70;
+        camera.position.z = 100;
+        //camera.position.z = 100;
         camera.position.y = 0;
 
                // camera.position.y= 160;

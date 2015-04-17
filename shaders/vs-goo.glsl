@@ -4,10 +4,16 @@ uniform float bumpSpeed;
 uniform float bumpHeight;
 uniform float time;
 
+uniform vec3 cameraLight;
+uniform vec3 puppyLight;
+
 varying vec3 vNorm;
 varying vec2 vUv;
 varying vec3 vPos;
 varying vec3 vMPos;
+varying vec3 vPuppyLight;
+varying vec3 vEye;
+varying vec3 vCameraLight;
 
 $simplex
 
@@ -54,9 +60,13 @@ void main(){
   vec3 norm = normalize( cross( dX , dY ));
 
   vNorm = -( modelMatrix * vec4( norm , 0. )).xyz;
-  vUv   = uv;
-  vPos  = position;
+  vUv   = position.xz;
+  vPos  = fPos;
   vMPos  = ( modelMatrix * vec4( fPos , 1.  )).xyz;
+
+  vEye = vMPos - cameraPosition;
+  vPuppyLight = vMPos - puppyLight;
+  vCameraLight = vMPos - cameraLight;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( fPos , 1. );
 
