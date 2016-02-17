@@ -96,6 +96,7 @@
 
 
       var audio = new Audio();
+      audio.crossOrigin = "anonymous";
       
       var source = audioController.ctx.createMediaElementSource(audio);
       source.connect( audioController.gain );
